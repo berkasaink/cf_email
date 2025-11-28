@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Email Manager</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background:#0f0f0f; color:white; }
+    .container { max-width: 600px; margin:auto; }
+    .card { background:#1a1a1a; padding:20px; border-radius:10px; margin-top:20px; }
+    input { width:100%; padding:10px; border-radius:6px; border:none; margin-top:10px; }
+    button { padding:10px 15px; margin-top:10px; background:#4CAF50; border:none; border-radius:6px; color:white; cursor:pointer; }
+    .email-item { display:flex; justify-content:space-between; padding:10px; background:#222; border-radius:6px; margin-top:8px; }
+    .del { background:#d9534f; padding:5px 10px; border:none; border-radius:4px; color:white; cursor:pointer; }
+    #loginBox { max-width: 350px; margin: 100px auto; background:#1a1a1a; padding:25px; border-radius:12px; }
+  </style>
+</head>
+<body>
+
+<div id="loginBox">
+  <h2>Login</h2>
+  <input id="pwd" type="password" placeholder="Password">
+  <button onclick="login()">Masuk</button>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="container">
+    <h1>📨 Email Alias Manager</h1>
+
+    <div class="card">
+      <h3>Buat Email Baru</h3>
+      <input id="alias" placeholder="contoh: admin"/>
+      <button onclick="buat()">Buat Email</button>
+    </div>
+
+    <div class="card">
+      <h3>Daftar Email Alias</h3>
+      <div id="list">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const PASSWORD = "GoenkTea404";
+  let AUTH = false;
+
+  function login(){
+    const val = document.getElementById("pwd").value;
+    if(val === PASSWORD){
+      AUTH = true;
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("app").style.display = "block";
+      loadList();
+    } else {
+      alert("Password salah");
+    }
+  }
+
+  async function loadList(){
+    const res = await fetch("/list", {
+      headers: { "Authorization": PASSWORD }
+    });
+    const data = await res.json();
+
+    let html = "";
+    data.result.forEach(r => {
+      const email = r.matchers[0].value;
+      html += `
+        <div class="email-item">
+          <span>${email}</span>
+          <button class="del" onclick="hapus('${r.id}')">Hapus</button>
+        </div>
+      `;
+    });
+
+    document.getElementById("list").innerHTML = html || "Belum ada alias.";
+  }
+
+  async function buat(){
+    const alias = document.getElementById("alias").value;
+    if(!alias) return alert("Masukkan alias!");
+
+    await fetch("/create", {
+      method:"POST",
+      headers:{ "Authorization": PASSWORD },
+      body: JSON.stringify({ alias })
+    });
+
+    document.getElementById("alias").value = "";
+    loadList();
+  }
+
+  async function hapus(id){
+    await fetch("/delete", {
+      method:"POST",
+      headers:{ "Authorization": PASSWORD },
+      body: JSON.stringify({ id })
+    });
+
+    loadList();
+  }
+</script>
+
+</body>
+</html>
